@@ -1,0 +1,510 @@
+// --------------------------------- //
+// Project: gal
+// Start: Tuesday, August 18, 2015
+// IDE Version: 14.003
+
+
+// SETCURRENTDIR("Media") // go to media files
+
+TYPE initial_TYPE
+
+	appPath$
+	savePath$
+	logPath$
+
+	FUNCTION generateDefaultInitialisazion:
+
+		AUTOPAUSE FALSE
+		SYSTEMPOINTER TRUE
+
+		self.initAppPath()
+		self.foldersExisting()
+
+		log.setLoglevel(0)
+
+	ENDFUNCTION
+
+	FUNCTION Loader:
+	LOCAL ok, tmp, tmp2
+	LOCAL loadCounter, fontCounter, fontIdentifier$
+
+		ok = checkFile("media/loadlist.ini")
+		IF ok = FALSE
+			log.addLogging("media/loadlist.ini not found", "core.initial.Loader", 1, 1)
+		ENDIF
+
+		INIOPEN "media/loadlist.ini"
+			loadCounter = INIGET$("count", "count")
+
+			FOR tmp = 0 TO loadCounter - 1
+				SELECT tmp
+				// font
+				CASE 0
+					fontCounter = INIGET$("font", "count")
+
+					FOR tmp2 = 0 TO fontCounter - 1
+
+						fontIdentifier$ = "font_" + tmp2
+						self.loadFile(INIGET$("font", fontIdentifier$), 1)
+
+					NEXT
+
+				CASE 1
+
+				CASE 2
+
+				ENDSELECT
+
+			NEXT
+
+
+		INIOPEN ""
+
+
+
+		//self.loadFile("media/font.png", 1)
+
+
+		SETFONT files.font[0].id
+
+	ENDFUNCTION
+
+	FUNCTION loadFile: file$, typ
+	// --------------------------------- //
+	// 1	font
+	// --------------------------------- //
+
+	LOCAL ok, font
+	LOCAL f AS font_TYPE
+
+		ok = checkFile(file$)
+
+		SELECT typ
+		// font
+		CASE 1
+			font = GENFONT()
+			
+			LOADFONT file$, font
+			
+			f.id = font
+			
+			GETFONTSIZE f.width, f.height
+
+			log.addLogging("font " + file$ + " loaded", "core.initial.loadFile", 3)
+
+			DIMPUSH files.font[], f
+
+		// sprite
+		CASE 2
+
+
+
+
+		ENDSELECT
+
+
+	ENDFUNCTION
+
+	FUNCTION checkFile: file$
+	LOCAL ok, error$
+
+		TRY
+			ok = DOESFILEEXIST(file$)
+			IF ok = FALSE THEN THROW file$ + " not found"
+		CATCH error$
+			log.addLogging(error$, "core.initial.Loader", 1)
+		FINALLY
+
+		IF LEN(error$) > 0
+			RETURN FALSE
+		ELSE
+			RETURN TRUE
+		ENDIF
+
+	ENDFUNCTION
+
+	FUNCTION initAppPath:
+
+		self.appPath$ = PLATFORMINFO$("APPDATA")
+
+	ENDFUNCTION
+
+	FUNCTION foldersExisting:
+	LOCAL ok, tmp, folders$[]
+
+		DIMDATA folders$[], "/galaXYZ", "/galaXYZ/log", "/galaXYZ/save"
+
+		FOR tmp = 0 TO LEN(folders$[]) - 1
+
+			ok = DOESDIREXIST(folders$[tmp])
+
+			IF ok = FALSE
+				self.generateFolder(folders$[tmp])
+			ENDIF
+
+		NEXT
+
+		self.logPath$  = self.appPath$ + folders$[1]
+		self.savePath$ = self.appPath$ + folders$[2]
+
+	ENDFUNCTION
+
+	FUNCTION generateFolder: folder$
+
+		CREATEDIR(self.appPath$ + folder$)
+
+	ENDFUNCTION
+
+ENDTYPE
+
+TYPE options_TYPE
+
+	debugLevel
+
+	FUNCTION initializeOptions:
+	LOCAL ok
+
+		ok = DOESFILEEXIST(core.initial.appPath$ + "/galaXYZ/options.ini")
+
+		IF ok = FALSE
+			self.generateOptionsFile()
+		ELSE
+			self.loadOptions()
+		ENDIF
+
+	ENDFUNCTION
+
+	FUNCTION generateOptionsFile:
+	LOCAL options$
+
+		options$ = "options"
+
+		INIOPEN core.initial.appPath$ + "/galaXYZ/options.ini"
+			INIPUT options$, "debugLevel", 0
+		INIOPEN ""
+
+		self.debugLevel = 0
+
+		log.setLoglevel(0)
+
+	ENDFUNCTION
+
+	FUNCTION loadOptions:
+	LOCAL options$
+
+		options$ = "options"
+
+		INIOPEN core.initial.appPath$ + "/galaXYZ/options.ini"
+
+			self.debugLevel = INIGET$(options$, "debugLevel")
+
+			log.setLoglevel(self.debugLevel)
+
+		INIOPEN ""
+
+	ENDFUNCTION
+
+ENDTYPE
+
+TYPE mouse_TYPE
+	x
+	y
+	b1
+	b2
+	b1_press
+	b2_press
+ENDTYPE
+
+TYPE core_TYPE
+	initial AS initial_TYPE
+	options AS options_TYPE
+	mouse AS mouse_TYPE
+ENDTYPE
+
+TYPE gui_TYPE
+
+ENDTYPE
+
+TYPE log_TYPE
+
+	loglevel
+
+	FUNCTION addLogging: info$, funktion$, prio, kill=0
+	LOCAL filename$[], prio$
+
+		IF prio > 0
+			SPLITSTR(PLATFORMINFO$("TIME"), filename$[], " ")
+
+			SELECT prio
+			CASE 1
+				prio$ = "ERROR"
+			CASE 2
+				prio$ = "WARNING"
+			CASE 3
+				prio$ = "INFO"
+			ENDSELECT
+
+			IF prio <= self.loglevel
+				OPENFILE(0, core.initial.logPath$ + "/" + filename$[0] + ".log", -1)
+
+					WRITELINE 0, filename$[1] + " | " + prio$ + " | " + funktion$ + " | " + info$
+				CLOSEFILE 0
+			ENDIF
+		ENDIF
+
+		IF kill = 1 THEN END
+
+	ENDFUNCTION
+
+	FUNCTION setLoglevel: id
+	// --------------------------------- //
+	// 0	Logging deaktiviert
+	// 1	Error
+	// 2	Error & Warning
+	// 3	Error & Warning & Info
+	// --------------------------------- //
+
+		IF id < 0 OR id > 3
+			self.loglevel = 0
+		ELSE
+			self.loglevel = id
+		ENDIF
+
+	ENDFUNCTION
+
+ENDTYPE
+
+TYPE moon_TYPE
+
+ENDTYPE
+
+TYPE planet_TYPE
+	moon[] AS moon_TYPE
+ENDTYPE
+
+TYPE solarSystem_TYPE
+	planet[] AS planet_TYPE
+	name$
+
+	FUNCTION generatePlanets: count
+
+	ENDFUNCTION
+
+ENDTYPE
+
+TYPE galaxy_TYPE
+	solarSystem[] AS solarSystem_TYPE
+
+	FUNCTION generateSolarSystems: count
+	LOCAL tmp, s AS solarSystem_TYPE
+
+		FOR tmp = 0 TO count -1
+			s.generatePlanets(RND(4))
+			s.name$ = tools.FNG$(0, 5 + RND(5))
+			DIMPUSH self.solarSystem[], s
+		NEXT
+
+	ENDFUNCTION
+
+ENDTYPE
+
+TYPE tools_TYPE
+
+
+	FUNCTION FNG$: start, lang
+	// ==========================
+	// Fantasy Name Generator 1.0
+	// ==========================
+	//
+	// 'start' --> gibt an, ob der Anfangsbuchstabe ein Mitlaut oder ein Selbstlaut ist
+	// 0 = Zufall
+	// 1 = Mitlaut
+	// 2 = Selbstlaut
+	//
+	// 'lang' --> gibt die Länge des gesamten Wortes an
+	LOCAL tmp, name$, status, buchst$, z_mit, z_sel, intern, status_tmp
+
+	FOR tmp = 1 TO lang
+
+
+	// Hier liegen die Standard - RND&#39;s
+	        IF start = 0
+	                status_tmp = RND(100)
+	                IF status_tmp <= 49 THEN status = 1
+	                IF status_tmp > 49 THEN status = 2
+	                start = 3
+	        ENDIF
+
+	        IF start = 1 THEN status = 1
+	        IF start = 2 THEN status = 2
+
+
+
+
+	SELECT status
+
+
+	// Hier werden die Mitlaute zufällig zugeteilt
+	CASE 1
+
+	        WHILE TRUE
+
+	                buchst$ = CHR$(RND(25) + 97)
+
+	                IF ASC(buchst$) <> 97 AND ASC(buchst$) <> 101 AND ASC(buchst$) <> 105 AND ASC(buchst$) <> 111 AND ASC(buchst$) <> 117
+	                        IF tmp = 1 THEN status = 2
+	                        IF tmp > 1
+
+	                                intern =  RND(100)
+	                                IF intern <= 49
+	                                        status = 1
+	                                        z_mit = z_mit + 1
+	                                ENDIF
+	                                IF intern > 49
+	                                        status = 2
+	                                        z_mit = 0
+	                                ENDIF
+	                                // d/n/q/g/y/x/k
+	                                IF z_mit >= 2 OR ASC(buchst$) = 100 OR ASC(buchst$) = 110 OR ASC(buchst$) = 115 OR ASC(buchst$) = 113 OR ASC(buchst$) = 103 OR ASC(buchst$) = 121 OR ASC(buchst$) = 120 OR ASC(buchst$) = 107
+	                                        status = 2
+	                                        z_mit = 0
+	                                ENDIF
+
+	                        ENDIF
+	                        BREAK
+	                ENDIF
+
+	        WEND
+
+
+	// Hier werden die Selbstlaute zufällig zugeteilt
+	CASE 2
+
+	        WHILE TRUE
+
+	                buchst$ = CHR$(RND(25) + 97)
+
+	                IF ASC(buchst$) = 97 OR ASC(buchst$) = 101 OR ASC(buchst$) = 105 OR ASC(buchst$) = 111 OR ASC(buchst$) = 117
+	                        IF tmp = 1 THEN status = 1
+	                        IF tmp > 1
+
+	                                intern =  RND(100)
+	                                IF intern <= 49
+	                                        status = 2
+	                                        z_sel = z_sel + 1
+	                                ENDIF
+	                                IF intern > 49
+	                                        status = 1
+	                                        z_sel = 0
+	                                ENDIF
+	                                IF z_sel >= 2 OR ASC(buchst$) = 117 OR ASC(buchst$) = 101
+	                                        status = 1
+	                                        z_sel = 0
+	                                ENDIF
+
+	                        ENDIF
+	                        BREAK
+	                ENDIF
+
+	        WEND
+
+	ENDSELECT
+
+
+	        IF tmp = 1
+	                name$ = name$ + UCASE$(buchst$)
+	        ELSE
+	                name$ = name$ + LCASE$(buchst$)
+	        ENDIF
+
+
+	NEXT
+
+
+	RETURN name$
+
+	ENDFUNCTION
+
+
+ENDTYPE
+
+TYPE font_TYPE
+	id
+	height
+	width
+ENDTYPE
+
+TYPE files_TYPE
+	font[] AS font_TYPE
+
+
+ENDTYPE
+
+
+GLOBAL core AS core_TYPE, gui AS gui_TYPE, log AS log_TYPE, galaxy AS galaxy_TYPE, tools AS tools_TYPE, files AS files_TYPE
+
+
+
+
+main()
+
+FUNCTION main:
+
+	core.initial.generateDefaultInitialisazion()
+	core.options.initializeOptions()
+	core.initial.Loader()
+
+	galaxy.generateSolarSystems(100)
+
+	WHILE TRUE
+
+		PRINT galaxy.solarSystem[0].name$, 0, 0
+
+
+
+		SHOWSCREEN
+	WEND
+
+ENDFUNCTION
+
+
+
+
+FUNCTION updateMouse:
+LOCAL x, y, b1, b2, b1_press, b2_press
+STATIC b1_tmp, b2_tmp, press_init, press_timer_old
+
+	MOUSESTATE x, y, b1_press, b2_press
+
+		core.mouse.x = x
+		core.mouse.y = y
+
+	IF b1_press = FALSE
+		b1 = FALSE
+		press_init = FALSE
+	ENDIF
+	IF b1_press = TRUE
+		b1_tmp = TRUE
+		IF press_init = FALSE
+			press_timer_old = GETTIMERALL() + 500
+			press_init = TRUE
+		ENDIF
+	ENDIF
+	IF b1_press = FALSE AND b1_tmp = TRUE AND GETTIMERALL() <= press_timer_old
+		b1 = TRUE
+		b1_tmp = FALSE
+	ENDIF
+
+	IF b2_press = FALSE THEN b2 = FALSE
+	IF b2_press = TRUE THEN b2_tmp = TRUE
+	IF b2_press = FALSE AND b2_tmp = TRUE
+		b2 = TRUE
+		b2_tmp = FALSE
+	ENDIF
+
+	core.mouse.b1 = b1
+	core.mouse.b2 = b2
+	core.mouse.b1_press = b1_press
+	core.mouse.b2_press = b2_press
+
+ENDFUNCTION
