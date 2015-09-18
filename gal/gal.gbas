@@ -74,8 +74,8 @@ TYPE initial_TYPE
 	// 1	font
 	// --------------------------------- //
 
-	LOCAL ok, font
-	LOCAL f AS font_TYPE
+	LOCAL ok, font, sprite
+	LOCAL f AS font_TYPE, s AS font_TYPE
 
 		ok = checkFile(file$)
 
@@ -96,8 +96,21 @@ TYPE initial_TYPE
 
 		// sprite
 		CASE 2
-
-
+			sprite = GENSPRITE()
+			
+			LOADSPRITE file$, sprite
+			
+			s.id = sprite
+			
+			GETSPRITESIZE sprite, s.width, s.height
+			
+			log.addLogging("sprite " + file$ + " loaded", "core.initial.loadFile", 3)
+			
+			DIMPUSH files.sprite[], s
+			
+			
+			
+			
 
 
 		ENDSELECT
@@ -440,7 +453,7 @@ ENDTYPE
 
 TYPE files_TYPE
 	font[] AS font_TYPE
-
+	sprite[] AS font_TYPE
 
 ENDTYPE
 
