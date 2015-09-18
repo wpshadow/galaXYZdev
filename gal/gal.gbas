@@ -83,11 +83,11 @@ TYPE initial_TYPE
 		// font
 		CASE 1
 			font = GENFONT()
-			
+
 			LOADFONT file$, font
-			
+
 			f.id = font
-			
+
 			GETFONTSIZE f.width, f.height
 
 			log.addLogging("font " + file$ + " loaded", "core.initial.loadFile", 3)
@@ -221,8 +221,12 @@ TYPE core_TYPE
 	mouse AS mouse_TYPE
 ENDTYPE
 
-TYPE gui_TYPE
+TYPE guiElements_TYPE
 
+ENDTYPE
+
+TYPE gui_TYPE
+	elements AS guiElements_TYPE
 ENDTYPE
 
 TYPE log_TYPE
