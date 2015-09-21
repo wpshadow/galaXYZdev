@@ -97,20 +97,20 @@ TYPE initial_TYPE
 		// sprite
 		CASE 2
 			sprite = GENSPRITE()
-			
+
 			LOADSPRITE file$, sprite
-			
+
 			s.id = sprite
-			
+
 			GETSPRITESIZE sprite, s.width, s.height
-			
+
 			log.addLogging("sprite " + file$ + " loaded", "core.initial.loadFile", 3)
-			
+
 			DIMPUSH files.sprite[], s
-			
-			
-			
-			
+
+
+
+
 
 
 		ENDSELECT
@@ -297,13 +297,24 @@ ENDTYPE
 
 TYPE planet_TYPE
 	moon[] AS moon_TYPE
+	name$
+	
+	
+	
 ENDTYPE
 
 TYPE solarSystem_TYPE
 	planet[] AS planet_TYPE
 	name$
+	innerAsteroidBelt
+	middleAsteroidBelt
+	outerAsteroidBelt
+
 
 	FUNCTION generatePlanets: count
+	LOCAL p AS planet_TYPE
+	
+		
 
 	ENDFUNCTION
 
@@ -311,6 +322,7 @@ ENDTYPE
 
 TYPE galaxy_TYPE
 	solarSystem[] AS solarSystem_TYPE
+
 
 	FUNCTION generateSolarSystems: count
 	LOCAL tmp, s AS solarSystem_TYPE
@@ -320,6 +332,8 @@ TYPE galaxy_TYPE
 			s.name$ = tools.FNG$(0, 5 + RND(5))
 			DIMPUSH self.solarSystem[], s
 		NEXT
+		
+		RND
 
 	ENDFUNCTION
 
